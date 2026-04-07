@@ -7,6 +7,46 @@ document.addEventListener('DOMContentLoaded', () => {
     const loginMessage = document.getElementById('login-message');
     const registerMessage = document.getElementById('register-message');
 
+    const STORAGE_KEY = 'app_users';
+
+    function getUsers() {
+        const users = localStorage.getItem(STORAGE_KEY);
+        return users ? JSON.parse(users) : [];
+    }
+
+    function saveUsers(users) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(users));
+    }
+
+    async function registerUser(username, email, password) {
+        return new Promise((resolve, reject) => {
+            const users = getUsers();
+            if (users.some(user => user.username === username)) {
+                reject(new Error('Пользователь с таким именем уже существует'));
+                return;
+            }
+            users.push({ username, email, password });
+            saveUsers(users);
+            resolve({ success: true });
+        });
+    }
+
+    async function loginUser(username, password) {
+        return new Promise((resolve, reject) => {
+            const users = getUsers();
+            const user = users.find(user => user.username === username);
+            if (!user) {
+                reject(new Error('Пользователь не найден'));
+                return;
+            }
+            if (user.password !== password) {
+                reject(new Error(`Неверный пароль возможно вы имели ввиду ${user.password}`));
+                return;
+            }
+            resolve({ success: true, username });
+        });
+    }
+
     loginTab.addEventListener('click', () => {
         loginTab.classList.add('active');
         registerTab.classList.remove('active');
@@ -41,9 +81,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
-            // реальная реализация здесь, не забыть!!!
-            await fakeAuth({ username, password });
-            showMessage(loginMessage, 'Успешный вход! (демо)', 'success');
+            await loginUser(username, password);
+            showMessage(loginMessage, 'Успешный вход!', 'success');
             loginForm.reset();
         } catch (error) {
             showMessage(loginMessage, error.message, 'error');
@@ -68,9 +107,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
-            await fakeRegister({ username, email, password });
-            showMessage(registerMessage, 'Регистрация успешна! (демо)', 'success');
+            await registerUser(username, email, password);
+            showMessage(registerMessage, 'Регистрация успешна! Теперь можно войти.', 'success');
             registerForm.reset();
+            setTimeout(() => {
+                registerTab.click();
+            }, 1000);
         } catch (error) {
             showMessage(registerMessage, error.message, 'error');
         }
@@ -79,30 +121,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function showMessage(element, text, type) {
         element.textContent = text;
         element.className = `message ${type}`;
-    }
-
-    function fakeAuth(data) {
-        return new Promise((resolve, reject) => {
-            setTimeout(() => {
-                if (data.username && data.password) {
-                    resolve({ success: true });
-                } else {
-                    reject(new Error('Неверный логин или пароль'));
-                }
-            }, 500);
-        });
-    }
-
-    function fakeRegister(data) {
-        return new Promise((resolve, reject) => {
-            setTimeout(() => {
-                if (data.username && data.email && data.password) {
-                    resolve({ success: true });
-                } else {
-                    reject(new Error('Ошибка регистрации'));
-                }
-            }, 500);
-        });
     }
 
     if ('serviceWorker' in navigator) {
