@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/titles', [TitleController::class, 'index']);
 Route::get('/chapter/{chapter}/page/{page}', [ChapterController::class, 'page']);
-Route::get('/title/{title}/comments', [CommentController::class, 'index']);
+Route::get('/title/{title:id}/comments', [CommentController::class, 'index']);
 
 Route::get('/chapter/{chapter}/navigate/{direction}', function (Chapter $chapter, string $direction, Request $request) {
     $operator = $direction === 'prev' ? '<' : '>';
