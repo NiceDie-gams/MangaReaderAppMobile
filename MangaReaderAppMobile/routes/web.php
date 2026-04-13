@@ -11,6 +11,10 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [TitleController::class, 'index'])->name('home');
 Route::get('/title/{title:slug}', [TitleController::class, 'show'])->name('titles.show');
 Route::get('/title/{title:slug}/chapter/{chapter}', [ChapterController::class, 'show'])->name('chapters.show');
+Route::get('/pages123', [ChapterController::class, 'showPages']);
+Route::get('/debug/manga1/ribbon/{chapterNumber?}', [ChapterController::class, 'debugMangaRibbon'])
+    ->whereNumber('chapterNumber')
+    ->name('debug.manga1.ribbon');
 
 Route::middleware('guest')->group(function () {
     Route::get('/auth', [AuthController::class, 'showLogin'])->name('auth.login');

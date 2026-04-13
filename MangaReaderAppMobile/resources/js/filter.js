@@ -143,18 +143,22 @@ document.getElementById('comment-form')?.addEventListener('submit', async (e) =>
 
 const chapterImage = document.getElementById('chapter-image');
 if (chapterImage) {
+    const fetchPageData = async (chapterId, pageNumber, direction = null) => {
+        const query = direction ? `?direction=${direction}` : '';
+        const response = await fetch(`/api/chapter/${chapterId}/page/${pageNumber}${query}`);
+        if (!response.ok) throw new Error();
+        return response.json();
+    };
+
     chapterImage.addEventListener('click', async (e) => {
         const rect = chapterImage.getBoundingClientRect();
         const clickX = e.clientX - rect.left;
         const goNext = clickX > rect.width / 2;
         const chapterId = chapterImage.dataset.chapterId;
-        const currentPage = Number(chapterImage.dataset.page);
-        const targetPage = goNext ? currentPage + 1 : currentPage - 1;
 
         try {
-            const response = await fetch(`/api/chapter/${chapterId}/page/${targetPage}`);
-            if (!response.ok) throw new Error();
-            const data = await response.json();
+            const currentPage = Number(chapterImage.dataset.page);
+            const data = await fetchPageData(chapterId, currentPage, goNext ? 'next' : 'prev');
             chapterImage.src = data.image_path;
             chapterImage.dataset.page = String(data.page_number);
             history.pushState({}, '', `/title/${data.title_slug}/chapter/${chapterId}?page=${data.page_number}`);

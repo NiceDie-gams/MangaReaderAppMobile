@@ -3,8 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Chapter;
+use App\Models\ChapterPage;
 use App\Models\Title;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
 class ChapterController extends Controller
@@ -18,27 +21,96 @@ class ChapterController extends Controller
         return view('chapter-show', compact('title', 'chapter', 'firstPage'));
     }
 
-    public function page(Chapter $chapter, int $page): JsonResponse
+    public function page(Chapter $chapter, int $page, Request $request): JsonResponse
     {
-        $chapter->load(['pages', 'title.chapters']);
+        $chapter->load('pages');
+        $availablePages = $chapter->pages->pluck('page_number')->values()->all();
         $current = $chapter->pages->firstWhere('page_number', $page);
-        abort_unless($current, 404);
+        if (! $current) {
+            Log::warning('Chapter page not found', [
+                'chapter_id' => $chapter->id,
+                'title_id' => $chapter->title_id,
+                'requested_page' => $page,
+                'available_pages' => $availablePages,
+            ]);
+            abort(404);
+        }
 
         $pages = $chapter->pages->values();
-        $index = $pages->search(fn ($p) => $p->id === $current->id);
+        $currentIndex = $pages->search(fn ($p) => $p->id === $current->id);
+        $direction = $request->query('direction');
 
-        $prevChapter = $chapter->title->chapters()->where('chapter_number', '<', $chapter->chapter_number)->orderByDesc('chapter_number')->first();
-        $nextChapter = $chapter->title->chapters()->where('chapter_number', '>', $chapter->chapter_number)->orderBy('chapter_number')->first();
+        $resolved = $current;
+        $resolvedIndex = $currentIndex;
+
+        if (in_array($direction, ['next', 'prev'], true)) {
+            $targetIndex = $direction === 'next' ? $currentIndex + 1 : $currentIndex - 1;
+            abort_unless($pages->has($targetIndex), 404);
+            $resolved = $pages[$targetIndex];
+            $resolvedIndex = $targetIndex;
+        }
+
+        $chaptersQuery = Chapter::query()->where('title_id', $chapter->title_id);
+        $prevChapter = (clone $chaptersQuery)
+            ->where('chapter_number', '<', $chapter->chapter_number)
+            ->orderByDesc('chapter_number')
+            ->first();
+        $nextChapter = (clone $chaptersQuery)
+            ->where('chapter_number', '>', $chapter->chapter_number)
+            ->orderBy('chapter_number')
+            ->first();
+
+        $titleSlug = $chapter->titleBelong?->slug;
+        abort_unless($titleSlug, 404);
+
+        Log::info('Chapter page resolved', [
+            'chapter_id' => $chapter->id,
+            'requested_page' => $page,
+            'direction' => $direction,
+            'resolved_page' => $resolved->page_number,
+            'prev_page_number' => $resolvedIndex > 0 ? $pages[$resolvedIndex - 1]->page_number : null,
+            'next_page_number' => $resolvedIndex < ($pages->count() - 1) ? $pages[$resolvedIndex + 1]->page_number : null,
+        ]);
 
         return response()->json([
-            'image_path' => $current->image_path,
-            'page_number' => $current->page_number,
-            'has_prev_page' => $index > 0,
-            'has_next_page' => $index < ($pages->count() - 1),
+            'image_path' => $resolved->image_path,
+            'page_number' => $resolved->page_number,
+            'has_prev_page' => $resolvedIndex > 0,
+            'has_next_page' => $resolvedIndex < ($pages->count() - 1),
+            'prev_page_number' => $resolvedIndex > 0 ? $pages[$resolvedIndex - 1]->page_number : null,
+            'next_page_number' => $resolvedIndex < ($pages->count() - 1) ? $pages[$resolvedIndex + 1]->page_number : null,
             'prev_chapter_id' => $prevChapter?->id,
             'next_chapter_id' => $nextChapter?->id,
-            'title_slug' => $chapter->title->slug,
+            'title_slug' => $titleSlug,
             'chapter_number' => $chapter->chapter_number,
         ]);
+    }
+
+    public function showPages()
+    {
+        dd(ChapterPage::all());
+    }
+
+    public function debugMangaRibbon(?int $chapterNumber = 1): View
+    {
+        $title = Title::query()
+            ->where('title', 'Manga 1')
+            ->orWhere('title', 'Manga1')
+            ->orWhere('slug', 'like', 'manga-1%')
+            ->first();
+        abort_unless($title, 404);
+
+        $chapterQuery = Chapter::query()
+            ->where('title_id', $title->id)
+            ->orderBy('chapter_number');
+
+        $chapter = $chapterNumber === null
+            ? $chapterQuery->first()
+            : (clone $chapterQuery)->where('chapter_number', $chapterNumber)->first();
+        abort_unless($chapter, 404);
+
+        $pages = $chapter->pages()->orderBy('page_number')->get();
+
+        return view('debug-manga-ribbon', compact('title', 'chapter', 'pages'));
     }
 }

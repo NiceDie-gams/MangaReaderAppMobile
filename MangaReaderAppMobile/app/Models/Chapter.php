@@ -10,9 +10,9 @@ class Chapter extends Model
 {
     protected $fillable = ['title_id', 'chapter_number', 'title'];
 
-    public function title(): BelongsTo
+    public function titleBelong(): BelongsTo
     {
-        return $this->belongsTo(Title::class);
+        return $this->belongsTo(Title::class, 'title_id');
     }
 
     public function pages(): HasMany

@@ -14,7 +14,11 @@ Route::get('/title/{title:id}/comments', [CommentController::class, 'index']);
 Route::get('/chapter/{chapter}/navigate/{direction}', function (Chapter $chapter, string $direction, Request $request) {
     $operator = $direction === 'prev' ? '<' : '>';
     $order = $direction === 'prev' ? 'desc' : 'asc';
-    $target = $chapter->title->chapters()->where('chapter_number', $operator, $chapter->chapter_number)->orderBy('chapter_number', $order)->first();
+    $target = Chapter::query()
+        ->where('title_id', $chapter->title_id)
+        ->where('chapter_number', $operator, $chapter->chapter_number)
+        ->orderBy('chapter_number', $order)
+        ->first();
 
     if (! $target) {
         return response()->json(['redirect_to_title' => true]);

@@ -22,7 +22,7 @@ class CommentController extends Controller
             'title_id' => ['required', 'exists:titles,id'],
             'content' => ['required', 'string', 'max:1500'],
         ]);
-
+        
         $comment = Comment::create([
             'user_id' => auth()->id(),
             'title_id' => $validated['title_id'],
