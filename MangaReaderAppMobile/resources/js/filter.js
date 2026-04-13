@@ -1,8 +1,21 @@
 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
 const loader = document.getElementById('global-loader');
 const toast = document.getElementById('global-toast');
+const pageLoader = document.getElementById('page-loader');
+const pageLoaderMessage = document.getElementById('page-loader-message');
 
-const showLoader = (state) => loader?.classList.toggle('hidden', !state);
+const showLoader = (state) => {
+    loader?.classList.toggle('hidden', !state);
+
+    // Show full-screen overlay while async title filtering is running.
+    if (document.getElementById('filter-form')) {
+        pageLoader?.classList.toggle('hidden', !state);
+        pageLoaderMessage?.classList.toggle('hidden', !state);
+        loader?.classList.add('hidden');
+    } else {
+        pageLoaderMessage?.classList.add('hidden');
+    }
+};
 const showToast = (message) => {
     if (!toast) return;
     toast.textContent = message;
