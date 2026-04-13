@@ -26,10 +26,10 @@ window.addEventListener('appinstalled', () => {
     installButton?.classList.add('hidden');
 });
 
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js').catch(() => {
-            // Keep silent in UI; app should work without SW.
-        });
-    });
-}
+// if ('serviceWorker' in navigator) {
+//     window.addEventListener('load', () => {
+//         navigator.serviceWorker.register('/sw.js').catch(() => {
+//             // Keep silent in UI; app should work without SW.
+//         });
+//     });
+// }
