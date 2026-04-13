@@ -21,8 +21,8 @@ Route::middleware('guest')->group(function () {
 
 Route::middleware('auth')->group(function () {
     Route::post('/auth/logout', [AuthController::class, 'logout'])->name('auth.logout');
-    Route::post('/favorites/{title}', [FavoriteController::class, 'store'])->name('favorites.store');
-    Route::delete('/favorites/{title}', [FavoriteController::class, 'destroy'])->name('favorites.destroy');
+    Route::post('/favorites/{title:id}', [FavoriteController::class, 'store'])->name('favorites.store');
+    Route::delete('/favorites/{title:id}', [FavoriteController::class, 'destroy'])->name('favorites.destroy');
     Route::post('/comments', [CommentController::class, 'store'])->name('comments.store');
     Route::get('/user/{user}', [UserController::class, 'show'])->name('users.show');
 });
