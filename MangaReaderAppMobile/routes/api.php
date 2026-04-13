@@ -29,3 +29,4 @@ Route::get('/chapter/{chapter}/navigate/{direction}', function (Chapter $chapter
         'page_number' => $page,
     ]);
 });
+//ну тут тоже проверяем есть ли главы до и после текущей
