@@ -142,7 +142,9 @@ document.getElementById('comment-form')?.addEventListener('submit', async (e) =>
 });
 
 const chapterImage = document.getElementById('chapter-image');
-if (chapterImage) {
+const chapterImageContainer = document.getElementById('chapter-image-container');
+
+if (chapterImage && chapterImageContainer) {
     const fetchPageData = async (chapterId, pageNumber, direction = null) => {
         const query = direction ? `?direction=${direction}` : '';
         const response = await fetch(`/api/chapter/${chapterId}/page/${pageNumber}${query}`);
@@ -150,15 +152,24 @@ if (chapterImage) {
         return response.json();
     };
 
-    chapterImage.addEventListener('click', async (e) => {
-        const rect = chapterImage.getBoundingClientRect();
-        const clickX = e.clientX - rect.left;
-        const goNext = clickX > rect.width / 2;
+    chapterImageContainer.addEventListener('click', async (e) => {
+        if(chapterImage.contains(e.target)) return;
+        const containerRect = chapterImageContainer.getBoundingClientRect();
+        const clickX = e.clientX - containerRect.left;
+        const halfWidth = containerRect.width / 2;
+
+        let direction = null;
+        if (clickX < halfWidth) {
+            direction = 'prev'; // левая часть
+        } else {
+            direction = 'next'; // правая часть
+        }
+
         const chapterId = chapterImage.dataset.chapterId;
 
         try {
             const currentPage = Number(chapterImage.dataset.page);
-            const data = await fetchPageData(chapterId, currentPage, goNext ? 'next' : 'prev');
+            const data = await fetchPageData(chapterId, currentPage, direction);
             chapterImage.src = data.image_path;
             chapterImage.dataset.page = String(data.page_number);
             history.pushState({}, '', `/title/${data.title_slug}/chapter/${chapterId}?page=${data.page_number}`);
@@ -167,3 +178,4 @@ if (chapterImage) {
         }
     });
 }
+

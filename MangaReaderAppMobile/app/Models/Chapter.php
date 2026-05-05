@@ -12,7 +12,7 @@ class Chapter extends Model
 
     public function titleBelong(): BelongsTo
     {
-        return $this->belongsTo(Title::class, 'title_id');
+        return $this->belongsTo(Title::class, 'title_id'); 
     }
 
     public function pages(): HasMany
